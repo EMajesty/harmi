@@ -16,6 +16,7 @@ use rp_pico::hal::{
     usb::UsbBus,
     watchdog::Watchdog,
 };
+use rp_pico::pac::i2c0;
 use rp_pico::XOSC_CRYSTAL_FREQ;
 use usb_device::bus::UsbBusAllocator;
 use usb_device::prelude::*;
@@ -84,32 +85,32 @@ fn main() -> ! {
     let mut lcd = HD44780::new_i2c(i2c, 0x27, &mut delay).unwrap();
 
     lcd.clear(&mut delay).unwrap();
-    lcd.write_str("Hell World", &mut delay).unwrap();
+    lcd.write_str("MIDI Init", &mut delay).unwrap();
 
-    static mut USB_BUS: Option<UsbBusAllocator<UsbBus>> = None;
+    // static mut USB_BUS: Option<UsbBusAllocator<UsbBus>> = None;
+    //
+    // unsafe {
+    //     USB_BUS = Some(UsbBusAllocator::new(UsbBus::new(
+    //         pac.USBCTRL_REGS,
+    //         pac.USBCTRL_DPRAM,
+    //         clocks.usb_clock,
+    //         true,
+    //         &mut pac.RESETS,
+    //     )));
+    // }
+    // let usb_bus = unsafe { USB_BUS.as_ref().unwrap() };
 
-    unsafe {
-        USB_BUS = Some(UsbBusAllocator::new(UsbBus::new(
-            pac.USBCTRL_REGS,
-            pac.USBCTRL_DPRAM,
-            clocks.usb_clock,
-            true,
-            &mut pac.RESETS,
-        )));
-    }
-    let usb_bus = unsafe { USB_BUS.as_ref().unwrap() };
+    let usb_bus = UsbBusAllocator::new(UsbBus::new(
+        pac.USBCTRL_REGS,
+        pac.USBCTRL_DPRAM,
+        clocks.usb_clock,
+        true,
+        &mut pac.RESETS,
+    ));
 
-    // let usb_bus = UsbBusAllocator::new(UsbBus::new(
-    //     pac.USBCTRL_REGS,
-    //     pac.USBCTRL_DPRAM,
-    //     clocks.usb_clock,
-    //     true,
-    //     &mut pac.RESETS,
-    // ));
+    let mut midi = MidiClass::new(&usb_bus, 0, 1).unwrap();
 
-    let mut midi = MidiClass::new(usb_bus, 0, 1).unwrap();
-
-    let mut usb_dev = UsbDeviceBuilder::new(usb_bus, UsbVidPid(VENDOR_ID, PRODUCT_ID))
+    let mut usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(VENDOR_ID, PRODUCT_ID))
         .strings(&[StringDescriptors::default()
             .manufacturer(MANUFACTURER)
             .product(PRODUCT)
