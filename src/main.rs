@@ -8,6 +8,7 @@ use rp_pico::entry;
 use rp_pico::hal::{
     clocks::{init_clocks_and_plls, Clock},
     fugit::RateExtU32,
+    fugit::Duration,
     gpio::{FunctionI2c, Pins},
     i2c::I2C,
     pac,
@@ -62,6 +63,8 @@ fn main() -> ! {
 
     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
+    let timer = Timer::new(pac.TIMER, &mut pac.RESETS, &clocks);
+
     // Configure GPIO pins
     let mut pins = Pins::new(
         pac.IO_BANK0,
@@ -108,10 +111,10 @@ fn main() -> ! {
         &mut pac.RESETS,
     ));
 
-    let mut midi = MidiClass::new(&usb_bus, 0, 1).unwrap();
+    let mut midi = MidiClass::new(&usb_bus, 1, 1).unwrap();
 
     let mut usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(VENDOR_ID, PRODUCT_ID))
-        .strings(&[StringDescriptors::default()
+        .strings(&[StringDescriptors::new(LangID::EN)
             .manufacturer(MANUFACTURER)
             .product(PRODUCT)
             .serial_number(SERIAL)])
@@ -119,25 +122,29 @@ fn main() -> ! {
         .device_class(0x01)
         .device_sub_class(0x03)
         .device_protocol(0x00)
-        .composite_with_iads()
+        // .composite_with_iads()
         .build();
 
     let channel = Channel::Channel1;
     let note = Note::C4;
 
-    lcd.clear(&mut delay).unwrap();
-    lcd.write_str("USB Config OK", &mut delay).unwrap();
-    delay.delay_ms(1000);
+    let mut last_poll = timer.get_counter();
 
     loop {
-        // Continuous USB polling
-        if !usb_dev.poll(&mut [&mut midi]) {
-            // USB polling error
-            lcd.clear(&mut delay).unwrap();
-            lcd.write_str("USB Poll Fail", &mut delay).unwrap();
-            led_pin.set_high().unwrap();
-            delay.delay_ms(500);
-            continue;
+        let now = timer.get_counter();
+        
+        if timer.get_counter() - last_poll >= Duration::millis(9) {
+            last_poll = now;
+
+            // Continuous USB polling
+            if !usb_dev.poll(&mut [&mut midi]) {
+                // USB polling error
+                lcd.clear(&mut delay).unwrap();
+                lcd.write_str("USB Poll Fail", &mut delay).unwrap();
+                led_pin.set_high().unwrap();
+                delay.delay_ms(500);
+                continue;
+            }
         }
 
         // Check USB device state
