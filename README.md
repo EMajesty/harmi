@@ -1,1 +1,1 @@
-Continuation of [arduchord](https://github.com/EMajesty/arduchord), now using Rust on a Raspberry Pi Pico
+Continuation of [arduchord](https://github.com/EMajesty/arduchord), now using a Raspberry Pi Pico
