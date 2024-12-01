@@ -6,7 +6,7 @@
 
 void setup() {
     initMidi();
-    // initInput();
+    initInput();
     initLcd();
 }
 
