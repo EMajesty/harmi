@@ -1,0 +1,3 @@
+[submodule "firmware/lib/Keypad"]
+	path = firmware/lib/Keypad
+	url = https://github.com/EMajesty/Keypad
