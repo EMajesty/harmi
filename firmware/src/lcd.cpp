@@ -12,3 +12,8 @@ void initLcd() {
   lcd.begin(LCD_COLS, LCD_ROWS);
   lcd.print("Hell World");
 }
+
+void printChord(char chord) {
+    lcd.home();
+    lcd.print(chord);
+}

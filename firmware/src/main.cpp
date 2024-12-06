@@ -12,6 +12,6 @@ void setup() {
 
 void loop() {
     // loopMidi();
-    // loopInput();
+    loopInput();
     // loopLcd();
 }
