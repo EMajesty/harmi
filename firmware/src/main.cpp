@@ -1,17 +1,34 @@
-#include <Arduino.h>
-#include "midi_messaging.h"
-#include "input.h"
-#include "lcd.h"
+#include "config.h"
+#include "InputManager.h"
+#include "ChordGenerator.h"
+#include "MidiManager.h"
+#include "DisplayManager.h"
 
+InputManager inputManager;
+ChordGenerator chordGenerator;
+MidiManager midiManager;
+DisplayManager displayManager;
 
 void setup() {
-    initMidi();
-    initInput();
-    initLcd();
+    inputManager.init();
+    midiManager.init();
+    displayManager.init();
 }
 
 void loop() {
-    // loopMidi();
-    loopInput();
-    // loopLcd();
+    int currentNote = inputManager.getNotePressed();
+
+    if (currentNote != -1) {
+        BaseChordType baseChordType = inputManager.getBaseChordType();
+        byte chordModifiers = inputManager.getChordModifiers();
+
+        chordGenerator.generateChord(currentNote, baseChordType, chordModifiers);
+
+        int* chordNotes = chordGenerator.getChordNotes();
+        int chordNoteCount = chordGenerator.getChordNoteCount();
+        midiManager.sendChord(chordNotes, chordNoteCount);
+
+        String chordName = chordGenerator.getChordName(currentNote, baseChordType, chordModifiers);
+        displayManager.displayChord(chordName);
+    }
 }
